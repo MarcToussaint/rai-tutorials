@@ -21,7 +21,6 @@ convert: $(ipynb_paths:%=%.convert)
 	+@-jupyter-nbconvert --to python $<
 
 %.ipynb.run: %.ipynb
-	cp rai.cfg rai.cfg.save
 	echo "noInteractivity: true" >>rai.cfg
 	echo "bot/blockRealRobot: true" >>rai.cfg
 	+@-echo "=========== run $< ======="
