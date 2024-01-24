@@ -368,7 +368,7 @@ class ManipulationModelling():
     def play(self, C, duration=1.):
         for t in range(self.path.shape[0]):
             C.setJointState(self.path[t])
-            C.view(False, f'place step {t}\n{self.info}')
+            C.view(False, f'step {t}\n{self.info}')
             time.sleep(duration/self.path.shape[0])
 
     def sub_motion(self, phase, homing_scale=1e-2, acceleration_scale=1e-1, accumulated_collisions=True, quaternion_norms=False):
