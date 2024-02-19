@@ -1,5 +1,4 @@
 import robotic as ry
-import random
 import numpy as np
 import time
 
@@ -73,12 +72,15 @@ class ManipulationModelling():
                 f.setPosition(f_org.getPosition())
                 f.setQuaternion(f_org.getQuaternion())
             
-        self.komo = ry.KOMO(self.C, 1., 32, 2, False)
+        self.komo = ry.KOMO(self.C, 1., 32, 2, accumulated_collisions)
         self.komo.addControlObjective([], order=0, scale=homing_scale)
         self.komo.addControlObjective([], order=2, scale=acceleration_scale)
         self.komo.initWithWaypoints([q1], 1, interpolate=True, qHomeInterpolate=.5, verbose=0)
         if quaternion_norms:
             self.komo.addQuaternionNorms()
+
+        if accumulated_collisions:
+            self.komo.addObjective([], ry.FS.accumulatedCollisions, [], ry.OT.eq, scale=[1e0])
 
         # zero vel at end
         self.komo.addObjective([1.], ry.FS.qItself, [], ry.OT.eq, scale=[1e0], order=1);
@@ -146,7 +148,7 @@ class ManipulationModelling():
             yzPlane = np.array([[1, 0, 0],[0, 1, 0]])
             align = [ry.FS.scalarProductXX, ry.FS.scalarProductXY]
         else:
-            raise Exception('pickDirection not defined:', pickDirection)
+            raise Exception('grasp_direction not defined:', grasp_direction)
 
         boxSize = self.C.frame(obj).getSize()[:3]
 
