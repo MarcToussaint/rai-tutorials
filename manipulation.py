@@ -95,7 +95,7 @@ class ManipulationModelling():
             rrt.setExplicitCollisionPairs(explicitCollisionPairs)
 
     def add_helper_frame(self, type, parent, name, initFrame):
-        f = self.komo.addStableFrame(type, parent, name, initFrame)
+        f = self.komo.addStableFrame(name, parent, type, True, initFrame)
         f.setShape(ry.ST.marker, [.2])
         f.setColor([1., 0., 1.])
         #f.joint.sampleSdv=1.
