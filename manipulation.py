@@ -19,6 +19,8 @@ class ManipulationModelling():
             if not f:
                 self.C.addFrame(name)
 
+        self.komo: ry.KOMO=None
+
     def setup_inverse_kinematics(self, homing_scale=1e-1, accumulated_collisions=True, quaternion_norms=False):
         """
         setup a 1 phase single step problem
@@ -83,10 +85,10 @@ class ManipulationModelling():
             self.komo.addObjective([], ry.FS.accumulatedCollisions, [], ry.OT.eq, scale=[1e0])
 
         # zero vel at end
-        self.komo.addObjective([1.], ry.FS.qItself, [], ry.OT.eq, scale=[1e0], order=1);
+        self.komo.addObjective([1.], ry.FS.qItself, [], ry.OT.eq, scale=[1e0], order=1)
 
         # end point
-        self.komo.addObjective([1.], ry.FS.qItself, [], ry.OT.eq, scale=[1e0], target=q1);
+        self.komo.addObjective([1.], ry.FS.qItself, [], ry.OT.eq, scale=[1e0], target=q1)
 
     def setup_point_to_point_rrt(self, q0, q1, explicitCollisionPairs):
         rrt = ry.PathFinder()
@@ -260,12 +262,31 @@ class ManipulationModelling():
         #obj end orientation: unchanged
         self.komo.addObjective([times[1]], ry.FS.quaternion, [obj], ry.OT.eq, [1e1], [], 1); #qobjPose.rot.getArr4d())
 
+    def pull(self, times, obj, gripper, table):
+        self.add_helper_frame(ry.JT.transXYPhi, table, '_pull_end', obj)
+        self.komo.addObjective([times[0]], ry.FS.vectorZ, [gripper], ry.OT.eq, [1e1], np.array([0,0,1]))
+        self.komo.addObjective([times[1]], ry.FS.vectorZ, [gripper], ry.OT.eq, [1e1], np.array([0,0,1]))
+        self.komo.addObjective([times[0]], ry.FS.vectorZ, [obj], ry.OT.eq, [1e1], np.array([0,0,1]))
+        self.komo.addObjective([times[1]], ry.FS.vectorZ, [obj], ry.OT.eq, [1e1], np.array([0,0,1]))
+        self.komo.addObjective([times[1]], ry.FS.positionDiff, [obj, '_pull_end'], ry.OT.eq, [1e1])
+        self.komo.addObjective([times[0]], ry.FS.positionRel, [gripper, obj], ry.OT.eq, 1e1*np.array([[1., 0., 0.], [0., 1., 0.]]), np.array([0, 0, 0]))
+        self.komo.addObjective([times[0]], ry.FS.negDistance, [gripper, obj], ry.OT.eq, [1e1], [-.005])
 
     def no_collision(self, time_interval, obj1, obj2, margin=.001):
         """
         inequality on distance between two objects
         """
         self.komo.addObjective(time_interval, ry.FS.negDistance, [obj1, obj2], ry.OT.ineq, [1e1], [-margin])
+
+    def no_collisions(self, time_interval, objs, margin=.001):
+        """
+        inequality on distance between multiple objects
+        """
+        while len(objs) > 1:
+            comp = objs[0]
+            del objs[0]
+            for obj in objs:
+                self.komo.addObjective(time_interval, ry.FS.negDistance, [comp, obj], ry.OT.ineq, [1e1], [-margin])
 
     def switch_pick():
         """
@@ -388,5 +409,4 @@ class ManipulationModelling():
     @property
     def feasible(self):
         return self.ret.feasible
-
-
+    
