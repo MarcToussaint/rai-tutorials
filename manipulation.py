@@ -58,7 +58,14 @@ class ManipulationModelling():
         assert self.komo==None
         self.setup_sequence(C, 2, homing_scale, velocity_scale, accumulated_collisions, joint_limits, quaternion_norms)
 
-        self.komo.addModeSwitch([1.,-1.], ry.SY.stable, [gripper, obj], True)
+        #-- option 1: old-style mode switches: //a temporary free stable joint gripper -> object
+        #self.komo.addModeSwitch([1.,-1.], ry.SY.stable, [gripper, obj], True)
+        #-- option 2: a permanent free stable gripper->grasp joint; and a snap grasp->object
+        self.add_stable_frame(ry.JT.free, gripper, 'obj_grasp', initFrame=obj)
+        self.snap_switch(1., 'obj_grasp', obj)
+        #-- option 3: a permanent free stable object->grasp joint; and a snap gripper->grasp
+        # self.add_stable_frame(ry.JT.free, obj, 'obj_grasp', initFrame=obj)
+        # self.snap_switch(1., gripper, 'obj_grasp')
 
     def setup_point_to_point_motion(self, C, q1, homing_scale=1e-2, acceleration_scale=1e-1, accumulated_collisions=True, joint_limits=True, quaternion_norms=False):
         '''
@@ -76,7 +83,9 @@ class ManipulationModelling():
         if len(explicitCollisionPairs):
             rrt.setExplicitCollisionPairs(explicitCollisionPairs)
 
-    def add_helper_frame(self, jointType, parent, name, initFrame=None, markerSize=-1.):
+    def add_stable_frame(self, jointType, parent, name, initFrame=None, markerSize=-1.):
+        if isinstance(initFrame, str):
+            initFrame = self.komo.getConfig().getFrame(initFrame)
         f = self.komo.addStableFrame(name, parent, jointType, True, initFrame)
         if markerSize>0.:
             f.setShape(ry.ST.marker, [.2])
@@ -171,7 +180,6 @@ class ManipulationModelling():
         '''
         zVectorTarget = np.array([0.,0.,1.])
         obj_frame = self.komo.getConfig().getFrame(obj)
-        boxSize = self.komo.getConfig().getFrame(obj).getSize()
         boxSize = obj_frame.getSize()
         if obj_frame.getShapeType()==ry.ST.ssBox:
             boxSize = boxSize[:3]
@@ -230,9 +238,9 @@ class ManipulationModelling():
         helperStart = f'_straight_pushStart_{gripper}_{obj}_{time_interval[0]}'
         helperEnd = f'_straight_pushEnd_{gripper}_{obj}_{time_interval[1]}'
         if not self.komo.getConfig().getFrame(helperStart, False):
-            self.add_helper_frame(ry.JT.hingeZ, table, helperStart, self.komo.getConfig().getFrame(obj), .3)
+            self.add_stable_frame(ry.JT.hingeZ, table, helperStart, obj, .3)
         if not self.komo.getConfig().getFrame(helperEnd, False):
-            self.add_helper_frame(ry.JT.transXYPhi, table, helperEnd, self.komo.getConfig().getFrame(obj), .3)
+            self.add_stable_frame(ry.JT.transXYPhi, table, helperEnd, obj, .3)
 
         #-- couple both frames symmetricaly
         #aligned orientation
@@ -262,7 +270,7 @@ class ManipulationModelling():
         return helperStart
 
     def pull(self, times, obj, gripper, table):
-        self.add_helper_frame(ry.JT.transXYPhi, table, '_pull_end', obj)
+        self.add_stable_frame(ry.JT.transXYPhi, table, '_pull_end', obj)
         self.komo.addObjective([times[0]], ry.FS.vectorZ, [gripper], ry.OT.eq, [1e1], np.array([0,0,1]))
         self.komo.addObjective([times[1]], ry.FS.vectorZ, [gripper], ry.OT.eq, [1e1], np.array([0,0,1]))
         self.komo.addObjective([times[0]], ry.FS.vectorZ, [obj], ry.OT.eq, [1e1], np.array([0,0,1]))
@@ -281,10 +289,12 @@ class ManipulationModelling():
             for obj in objs:
                 self.komo.addObjective(time_interval, ry.FS.negDistance, [comp, obj], ry.OT.ineq, [1e1], [-margin])
 
-    def switch_pick():
+    def snap_switch(self, time, parent, obj):
         '''
-        a kinematic mode switch, where obj becomes attached to gripper, with freely parameterized but stable (=constant) relative pose
+        a kinematic mode switch, where at given time the obj becomes attached to parent with zero relative transform
+        the parent is typically a stable_frame (i.e. a frame that has parameterized but stable (i.e. constant) relative transform)
         '''
+        self.komo.addRigidSwitch(time, [parent, obj])
 
     def switch_place():
         '''
@@ -317,20 +327,20 @@ class ManipulationModelling():
         '''
         self.komo.addObjective([time], ry.FS.qItself, [], ry.OT.sos, scale=scale, target=qBias)
 
-    def retract(self, time_interval, gripper, dist=.05):
+    def retract(self, time_interval, gripper, dist=.03):
         helper = f'_{gripper}_retract_{time_interval[0]}'
         f = self.komo.getFrame(gripper, time_interval[0])
-        self.add_helper_frame(ry.JT.none, '', helper, f)
+        self.add_stable_frame(ry.JT.none, '', helper, f)
     #  self.komo.view(True, helper)
 
         self.komo.addObjective(time_interval, ry.FS.positionRel, [gripper, helper], ry.OT.eq, 1e2 * np.array([[1, 0, 0]]))
         self.komo.addObjective(time_interval, ry.FS.quaternionDiff, [gripper, helper], ry.OT.eq, [1e2])
         self.komo.addObjective([time_interval[1]], ry.FS.positionRel, [gripper, helper], ry.OT.ineq, -1e2 * np.array([[0, 0, 1]]), target = [0., 0., dist])
 
-    def approach(self, time_interval, gripper, dist=.05):
+    def approach(self, time_interval, gripper, dist=.03):
         helper = f'_{gripper}_approach_{time_interval[1]}'
         f = self.komo.getFrame(gripper, time_interval[1])
-        self.add_helper_frame(ry.JT.none, '', helper, f)
+        self.add_stable_frame(ry.JT.none, '', helper, f)
     #  self.komo.view(True, helper)
 
         self.komo.addObjective(time_interval, ry.FS.positionRel, [gripper, helper], ry.OT.eq, 1e2 * np.array([[1, 0, 0]]))
@@ -340,7 +350,7 @@ class ManipulationModelling():
     def retractPush(self, time_interval, gripper, dist):
         helper = f'_{gripper}_retractPush_{time_interval[0]}'
         f = self.komo.getFrame(gripper, time_interval[0])
-        self.add_helper_frame(ry.JT.none, '', helper, f)
+        self.add_stable_frame(ry.JT.none, '', helper, f)
     #  self.komo.addObjective(time_interval, ry.FS.positionRel, [gripper, helper], ry.OT.eq, * np.array([[1,3},{1,0,0]]))
         #  self.komo.addObjective(time_interval, ry.FS.quaternionDiff, [gripper, helper], ry.OT.eq, [1e2])
         self.komo.addObjective(time_interval, ry.FS.positionRel, [gripper, helper], ry.OT.eq, * np.array([[1, 0, 0]]))
@@ -350,7 +360,7 @@ class ManipulationModelling():
     def approachPush(self, time_interval, gripper, dist):
         helper = f'_{gripper}_approachPush_{time_interval[1]}'
         f = self.komo.getFrame(gripper, time_interval[1])
-        self.add_helper_frame(ry.JT.none, '', helper, f)
+        self.add_stable_frame(ry.JT.none, '', helper, f)
         self.komo.addObjective(time_interval, ry.FS.positionRel, [gripper, helper], ry.OT.eq, * np.array([[1, 0, 0]]))
         self.komo.addObjective([time_interval[0]], ry.FS.positionRel, [gripper, helper], ry.OT.ineq, * np.array([[0, 1, 0]]), [0., -dist, 0.])
         self.komo.addObjective([time_interval[0]], ry.FS.positionRel, [gripper, helper], ry.OT.ineq, -1e2 * np.array([[0, 0, 1]]), [0., 0., dist])
