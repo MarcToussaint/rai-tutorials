@@ -1,7 +1,9 @@
 import robotic as ry
 import numpy as np
 import time
-from typing import Union
+import sys
+
+from typing import List, Union, Tuple # mandatory inputs for program to work with python < 3.9
 
 class ManipulationModelling():
 
@@ -178,7 +180,7 @@ class ManipulationModelling():
         self.komo.initWithWaypoints([q1], 1, interpolate=True, qHomeInterpolate=.5, verbose=0)
         self.komo.addObjective([1.], ry.FS.qItself, [], ry.OT.eq, scale=[1e0], target=q1)
 
-    def setup_point_to_point_rrt(self, C: ry.Config, q0: list[float], q1: list[float], explicitCollisionPairs: list[tuple[str, str]]):
+    def setup_point_to_point_rrt(self, C: ry.Config, q0: List[float], q1: List[float], explicitCollisionPairs: List[Tuple[str, str]]):
         """
         Sets up a point-to-point RRT (Rapidly-exploring Random Tree) motion planning problem.
 
@@ -417,7 +419,7 @@ class ManipulationModelling():
         if palm != None:
            self.komo.addObjective([time-.3, time], ry.FS.distance, [palm, table], ry.OT.ineq, [1e1], [-.001])
 
-    def straight_push(self, time_interval: list[float], obj: str, gripper: str, table: str):
+    def straight_push(self, time_interval: List[float], obj: str, gripper: str, table: str):
         """
         Define a straight push motion for the gripper to push an object across a table.
 
@@ -471,7 +473,7 @@ class ManipulationModelling():
     
         return helperStart
 
-    def pull(self, times: list[float], obj: str, gripper: str, table: str):
+    def pull(self, times: List[float], obj: str, gripper: str, table: str):
         """
         Define a pulling motion where the gripper pulls an object along the table surface while maintaining a fixed downward orientation.
 
@@ -491,7 +493,7 @@ class ManipulationModelling():
         self.komo.addObjective([times[0]], ry.FS.positionRel, [gripper, obj], ry.OT.eq, 1e1*np.array([[1., 0., 0.], [0., 1., 0.]]), np.array([0, 0, 0]))
         self.komo.addObjective([times[0]], ry.FS.negDistance, [gripper, obj], ry.OT.eq, [1e1], [-.005])
 
-    def no_collisions(self, time_interval: list[float], objs: list[str], margin: float = 0.001):
+    def no_collisions(self, time_interval: List[float], objs: List[str], margin: float = 0.001):
         """
         Add inequality constraints on the distance between multiple objects to ensure no collisions between
         multiple objects over a specified time interval.
@@ -529,7 +531,7 @@ class ManipulationModelling():
         impose a specific 3D target position on some object
         '''
 
-    def target_relative_xy_position(self, time: float, obj: str, relativeTo: str, pos: list[float]):
+    def target_relative_xy_position(self, time: float, obj: str, relativeTo: str, pos: List[float]):
         """
         Impose a specific 3D target position on an object relative to another frame at a given time.
 
@@ -544,7 +546,7 @@ class ManipulationModelling():
             pos.append(0.)
         self.komo.addObjective([time], ry.FS.positionRel, [obj, relativeTo], ry.OT.eq, scale=1e1*np.array([[1,0,0],[0,1,0]]), target=pos)
 
-    def target_x_orientation(self, time: float, obj: str, x_vector: list[float]):
+    def target_x_orientation(self, time: float, obj: str, x_vector: List[float]):
         """
         Align the x-axis orientation of a specified object with a target vector at a given time.
 
@@ -556,7 +558,7 @@ class ManipulationModelling():
         """
         self.komo.addObjective([time], ry.FS.vectorX, [obj], ry.OT.eq, scale=[1e1], target=x_vector)
 
-    def target_y_orientation(self, time: float, obj: str, y_vector: list[float]):
+    def target_y_orientation(self, time: float, obj: str, y_vector: List[float]):
         """
         Align the y-axis orientation of a specified object with a target vector at a given time.
 
@@ -568,7 +570,7 @@ class ManipulationModelling():
         """
         self.komo.addObjective([time], ry.FS.vectorY, [obj], ry.OT.eq, scale=[1e1], target=y_vector)
 
-    def target_z_orientation(self, time: float, obj: str, z_vector: list[float]):
+    def target_z_orientation(self, time: float, obj: str, z_vector: List[float]):
         """
         Align the z-axis orientation of a specified object with a target vector at a given time.
 
@@ -580,7 +582,7 @@ class ManipulationModelling():
         """
         self.komo.addObjective([time], ry.FS.vectorZ, [obj], ry.OT.eq, scale=[1e1], target=z_vector)
 
-    def bias(self, time: float, qBias: list[float], scale: float = 1.0):
+    def bias(self, time: float, qBias: List[float], scale: float = 1.0):
         """
         Impose a square potential bias directly in joint space.
 
@@ -595,7 +597,7 @@ class ManipulationModelling():
         """
         self.komo.addObjective([time], ry.FS.qItself, [], ry.OT.sos, scale=scale, target=qBias)
 
-    def retract(self, time_interval: list[float], gripper: str, dist: float = 0.03):
+    def retract(self, time_interval: List[float], gripper: str, dist: float = 0.03):
         """
         Define a retract motion for a specified gripper over a time interval.
 
@@ -614,7 +616,7 @@ class ManipulationModelling():
         self.komo.addObjective(time_interval, ry.FS.quaternionDiff, [gripper, helper], ry.OT.eq, [1e2])
         self.komo.addObjective([time_interval[1]], ry.FS.positionRel, [gripper, helper], ry.OT.ineq, -1e2 * np.array([[0, 0, 1]]), target = [0., 0., dist])
 
-    def approach(self, time_interval: list[float], gripper: str, dist: float = 0.03):
+    def approach(self, time_interval: List[float], gripper: str, dist: float = 0.03):
         """
         Define an approach motion for a specified gripper over a time interval.
 
@@ -633,7 +635,7 @@ class ManipulationModelling():
         self.komo.addObjective(time_interval, ry.FS.quaternionDiff, [gripper, helper], ry.OT.eq, [1e2])
         self.komo.addObjective([time_interval[0]], ry.FS.positionRel, [gripper, helper], ry.OT.ineq, -1e2 * np.array([[0, 0, 1]]), target = [0., 0., dist])
 
-    def retractPush(self, time_interval: list[float], gripper: str, dist: float):
+    def retractPush(self, time_interval: List[float], gripper: str, dist: float):
         """
         Define a retract motion with a push for a specified gripper over a time interval.
 
@@ -651,7 +653,7 @@ class ManipulationModelling():
         self.komo.addObjective([time_interval[1]], ry.FS.positionRel, [gripper, helper], ry.OT.ineq, * np.array([[0, 1, 0]]), [0., -dist, 0.])
         self.komo.addObjective([time_interval[1]], ry.FS.positionRel, [gripper, helper], ry.OT.ineq, -1e2 * np.array([[0, 0, 1]]), [0., 0., dist])
 
-    def approachPush(self, time_interval: list[float], gripper: str, dist: float):
+    def approachPush(self, time_interval: List[float], gripper: str, dist: float):
         """
         Define an approach motion with a push for a specified gripper over a time interval.
 
@@ -667,7 +669,7 @@ class ManipulationModelling():
         self.komo.addObjective([time_interval[0]], ry.FS.positionRel, [gripper, helper], ry.OT.ineq, * np.array([[0, 1, 0]]), [0., -dist, 0.])
         self.komo.addObjective([time_interval[0]], ry.FS.positionRel, [gripper, helper], ry.OT.ineq, -1e2 * np.array([[0, 0, 1]]), [0., 0., dist])
         
-    def solve(self, verbose: int=1) -> list[list[float]]:
+    def solve(self, verbose: int=1) -> List[List[float]]:
         """
         Finding a feasible path or trajectory by solving a nonlinear optimization problem formulated in KOMO, or using RRT, respectively.
 
@@ -768,7 +770,7 @@ class ManipulationModelling():
         return manip
 
 
-    def sub_rrt(self, phase: int, explicitCollisionPairs: list[str]=[]) -> 'ManipulationModelling':
+    def sub_rrt(self, phase: int, explicitCollisionPairs: List[str]=[]) -> 'ManipulationModelling':
         """
         Create a sub-motion plan for a specific phase using RRT and return a ManipulationModelling instance.
 
