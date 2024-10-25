@@ -207,13 +207,15 @@ class ManipulationModelling():
             markerSize (float, optional): The size of the visual marker to attach to the new frame. Default is -1 (no marker).
         """
         if isinstance(initFrame, str):
-            initFrame = self.komo.getConfig().getFrame(initFrame)
-        f = self.komo.addStableFrame(name, parent, jointType, True, initFrame)
+            #initFrame = self.komo.getConfig().getFrame(initFrame)
+            f = self.komo.addStableFrame(name, parent, jointType, True, initFrame, None)
+        else:
+            f = self.komo.addStableFrame(name, parent, jointType, True, None, initFrame)
         if markerSize>0.:
             f.setShape(ry.ST.marker, [.2])
             f.setColor([1., 0., 1.])
         #f.joint.sampleSdv=1.
-        #f.joint.setRandom(self.komo.timeSlices.d1, 0)
+        #f.joint.setRandom(self.komo.timeSl
 
     def grasp_top_box(self, time, gripper, obj, grasp_direction='xz'):
         """
