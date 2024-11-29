@@ -10,6 +10,12 @@ import robotic as ry
 
 print(ry.compiled())
 
+def displayPcl(pcl):
+    C = ry.Config()
+    C.addFrame('pcl') \
+        .setPosition([0,0,1]) \
+        .setPointCloud(pcl, [255,0,0])
+    C.view(True, 'displayPcl method')
 
 ### low-level interface
 
@@ -17,8 +23,10 @@ SG = ry.DataGen.ShapenetGrasps()
 SG.setOptions(verbose=2)
 
 SG.loadObject(shape=3)
+
 pcl = SG.getPointCloud()
 print('point cloud size: ', pcl.shape)
+displayPcl(pcl)
 
 pose = SG.sampleGraspPose()
 print('candidate pose: ', pose)
