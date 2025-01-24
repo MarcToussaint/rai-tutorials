@@ -86,9 +86,9 @@ class ManipulationModelling():
     def add_stable_frame(self, jointType, parent, name, initFrame=None, markerSize=-1.):
         if isinstance(initFrame, str):
             #initFrame = self.komo.getConfig().getFrame(initFrame)
-            f = self.komo.addStableFrame(name, parent, jointType, True, initFrame, None)
+            f = self.komo.addFrameDof(name, parent, jointType, True, initFrame, None)
         else:
-            f = self.komo.addStableFrame(name, parent, jointType, True, None, initFrame)
+            f = self.komo.addFrameDof(name, parent, jointType, True, None, initFrame)
         if markerSize>0.:
             f.setShape(ry.ST.marker, [.2])
             f.setColor([1., 0., 1.])
