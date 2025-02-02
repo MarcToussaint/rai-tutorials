@@ -5,7 +5,7 @@ robotic.egg-info/
 rai-robotModels
 
 %% compile temporaries
-/build
+build/
 *.o
 *.a
 *.so

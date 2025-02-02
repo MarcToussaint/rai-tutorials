@@ -6,16 +6,15 @@
 
 import robotic as ry
 import numpy as np
-#from manipulation import KOMO_ManipulationHelper
+from manipulation import KOMO_ManipulationHelper
 import time
 
 def plan(C):
-    ways = ry.KOMO_ManipulationHelper()
+    ways = KOMO_ManipulationHelper()
     ways.setup_sequence(C, 2, 1e-2, 1e-1, False, False, False)
     ways.grasp_box(1., 'l_gripper', 'obj', 'l_palm', 'x', .02)
-    ways.addObjective([2.], ry.FS.position, ['l_gripper'], ry.OT.eq, scale=[0,0,1e0], target=[0,0,1])
+    ways.komo.addObjective([2.], ry.FS.position, ['l_gripper'], ry.OT.eq, scale=[0,0,1e0], target=[0,0,1])
     ret = ways.solve(0)
-    X = ways.getPath()
     # ways.view(True)
     if not ret.feasible:
         return None, None
