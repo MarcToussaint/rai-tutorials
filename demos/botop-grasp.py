@@ -6,28 +6,31 @@
 
 import robotic as ry
 import numpy as np
-from manipulation import KOMO_ManipulationHelper
 import time
 
-def plan(C):
-    ways = KOMO_ManipulationHelper()
+def plan(C, usePredefinedGrasp):
+    ways = ry.KOMO_ManipulationHelper()
     ways.setup_sequence(C, 2, 1e-2, 1e-1, False, False, False)
-    ways.grasp_box(1., 'l_gripper', 'obj', 'l_palm', 'x', .02)
-    ways.komo.addObjective([2.], ry.FS.position, ['l_gripper'], ry.OT.eq, scale=[0,0,1e0], target=[0,0,1])
+    if usePredefinedGrasp:
+        ways.komo.addObjective([1.], ry.FS.poseDiff, ['l_gripper', 'predefined_grasp'], ry.OT.eq, scale=[1e1]) # impose a constraint to reach a predefined grasp
+    else:
+        ways.grasp_box(1., 'l_gripper', 'obj', 'l_palm', 'x', .02) # otherwise impose more general box grasp constraints
+    ways.komo.addObjective([2.], ry.FS.position, ['l_gripper'], ry.OT.eq, scale=[0,0,1e0], target=[0,0,1]) # impose 'some' constaint also on the 2nd frame, here just lift, later, place with other orientation
     ret = ways.solve(0)
+    print('grasp costs/feasibilities:', ret) # this provides a metric for how good/feasible the grasp is kinematically; can be use to reject the grasp
     # ways.view(True)
     if not ret.feasible:
         return None, None
 
     motion1 = ways.sub_motion(0)
-    motion1.approach([.8,1.], 'l_gripper')
+    motion1.approach([.8,1.], 'l_gripper') ## this generates the motion to the first waypoint, with the last 20% constrained to be an 'approach' to the grasp
     ret = motion1.solve(0)
     # motion1.view(True)
     if not ret.feasible:
         return None, None
 
     motion2 = ways.sub_motion(1)
-    ret = motion2.solve(0)
+    ret = motion2.solve(0)  ## no additional constraints at all on the motion between 1st and 2nd waypoint; later: up and down motion
     # motion2.view(True)
     if not ret.feasible:
         return None, None
@@ -76,7 +79,12 @@ def main():
         .setColor([1,.5,0]) \
         .setMass(.1) \
         .setContact(True)
-    
+
+    # this adds a helper frame to specify the predefined grasp, here hardcoded relative to the object; for AnyGrasp perhaps in world (no parent frame) or camera coordinates (camera as parent)
+    predefined_grasp = C.addFrame('predefined_grasp', 'obj')
+    predefined_grasp.setRelativePosition([.0,.0,.02])  #2cm above center
+    predefined_grasp.setShape(ry.ST.marker, [.1])
+
     for i in range(10):
         # rnd object pose
         obj.setPosition(np.random.uniform([-.5,0.,.7], [.5,.5,.7]))
@@ -85,7 +93,7 @@ def main():
 
         # plan
         t = -time.perf_counter()
-        path1, path2 = plan(C)
+        path1, path2 = plan(C, usePredefinedGrasp=False)
         t += time.perf_counter()
         print('planning time: ', t)
 
