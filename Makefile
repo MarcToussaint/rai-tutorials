@@ -1,10 +1,13 @@
 
-ipynb_paths =  $(shell find . -maxdepth 1 -type f -name '*.ipynb' -not -name '*checkpoint*' -not -name '*nbconvert*' -printf "%f ")
+ipynb_paths =  $(shell find . -maxdepth 1 -type f -name '*.ipynb' -not -name '*checkpoint*' -not -name '*nbconvert*' -printf '%f ')
+
+demo_paths =  $(shell find demos -maxdepth 1 -type f -name '*.py' -printf '%f ')
 
 #run:
 #	@for p in $(ipynb_paths); do jupyter-nbconvert --to notebook --execute $$p; done
 
 run: $(ipynb_paths:%=%.run)
+run_demos: $(demo_paths:%=%.run)
 clean: $(ipynb_paths:%=%.clean)
 nometa: $(ipynb_paths:%=%.nometa)
 convert: $(ipynb_paths:%=%.convert)
@@ -27,4 +30,12 @@ convert: $(ipynb_paths:%=%.convert)
 	+@-jupyter-nbconvert --execute --inplace $<
 	+@-echo "=========== done $< ======="
 	rm -f *.nbconvert.ipynb
+	git checkout rai.cfg
+
+%.py.run: demos/%.py
+	echo "noInteractivity: true" >>rai.cfg
+	echo "bot/blockRealRobot: true" >>rai.cfg
+	+@-echo "=========== run $< ======="
+	+@-python3 $<
+	+@-echo "=========== done $< ======="
 	git checkout rai.cfg

@@ -23,6 +23,7 @@ callgrind.out.*
 *.exe
 
 %% IDE temporaries
+.vscode
 .idea
 *.kdev4
 vc60.idb
