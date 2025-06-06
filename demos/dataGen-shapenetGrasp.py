@@ -9,12 +9,21 @@ import numpy as np
 import robotic as ry
 
 print(ry.compiled())
+ry.params_add({
+    'physx/defaultFriction': 3.,  #reduce slip
+    })
 
-def displayPcl(pcl):
+def displayPcl(points, normals):
     C = ry.Config()
     C.addFrame('pcl') \
         .setPosition([0,0,1]) \
-        .setPointCloud(pcl, [255,0,0])
+        .setPointCloud(points, [255,0,0])
+    
+    lines = np.concatenate((pts, pts + .02*normals), axis=1).reshape(-1,3)
+    C.addFrame('normals') \
+        .setPosition([0,0,1]) \
+        .setLines(lines, [255,0,0])
+
     C.view(True, 'displayPcl method')
 
 ### low-level interface
@@ -24,23 +33,26 @@ SG.setOptions(verbose=2)
 
 SG.loadObject(shape=3)
 
-pcl = SG.getPointCloud()
-print('point cloud size: ', pcl.shape)
-displayPcl(pcl)
+pts = SG.getPointCloud()
+normals = SG.getPointNormals()
+print('point cloud size: ', pts.shape)
+displayPcl(pts, normals)
 
-pose = SG.sampleGraspPose()
-print('candidate pose: ', pose)
+for i in range(20):
+    pose = SG.sampleGraspPose()
+    print('candidate pose: ', pose)
 
-scores = SG.evaluateGrasp()
-print('scores: ', scores)
+    SG.setGraspPose(pose)
+
+    scores = SG.evaluateGrasp()
+    print('scores: ', scores)
 
 
 ### batch data generation interface
 
 SG = ry.DataGen.ShapenetGrasps()
 
-SG.setOptions(startShape=3, numShapes=1, verbose=1) #verbose=2 for slow, verbose=0 for silent
-SG.setPhysxOptions(motorKp=20000., motorKd=500., angularDamping=1., defaultFriction=3.)
+SG.setOptions(startShape=3, endShape=4, verbose=1) #verbose=2 for slow, verbose=0 for silent
 
 X, Z, S = SG.getSamples(20)
 
