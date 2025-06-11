@@ -3,6 +3,7 @@ CMakeLists.txt
 dist/
 robotic.egg-info/
 rai-robotModels
+tensorboard/
 
 %% compile temporaries
 build/

@@ -38,14 +38,16 @@ normals = SG.getPointNormals()
 print('point cloud size: ', pts.shape)
 displayPcl(pts, normals)
 
-for i in range(20):
+for i in range(5):
     pose = SG.sampleGraspPose()
     print('candidate pose: ', pose)
 
     SG.setGraspPose(pose)
 
     scores = SG.evaluateGrasp()
+    poses = SG.getEvalGripperPoses()
     print('scores: ', scores)
+    print('poses: (esp poses[1] is interesting, which is after finger close)\n', poses)
 
 
 ### batch data generation interface
@@ -54,11 +56,12 @@ SG = ry.DataGen.ShapenetGrasps()
 
 SG.setOptions(startShape=3, endShape=4, verbose=1) #verbose=2 for slow, verbose=0 for silent
 
-X, Z, S = SG.getSamples(20)
+X, Z, S = SG.getSamples(5)
 
 SG.displaySamples(X, Z, S)
 
 for i in range(X.shape[0]):
+    SG.resetObjectPose()
     scores = SG.evaluateSample(X[i], Z[i]).reshape(-1)
     #scores is a list of numbers for different tests, should all be positive
     print(f'sample {i}:\n  valid: {min(scores)>0.}\n  scores: {scores}\n  data: {S[i]}')
