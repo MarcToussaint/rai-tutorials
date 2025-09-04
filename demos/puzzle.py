@@ -16,11 +16,12 @@ def test():
     C = ry.Config()
     C.addFile('puzzle.g')
     C.view(False)
+    C.viewer().setWindow('PUZZLE', 1000, 1000)
+    C.viewer().setupEventHandler(True)
 
     bot = ry.BotOp(C, False)
     bot.home(C)
 
-    C.get_viewer().setupEventHandler(True)
 
     cursor = C.addFrame('cursor')
     ego = C.getFrame("ego")
@@ -44,24 +45,25 @@ def test():
         q = bot.get_q()
         ctrlTime = bot.get_t()
 
-        pos = C.get_viewer().getEventCursor()
+        pos = C.get_viewer().getEventCursor() #3D position of the mouse cursor projected into the scene, appended with 3D surface normal
 
         if pos.size==6:
             cursor.setPosition(pos[:3])
             delta = pos[:2] - q
 
             l = np.linalg.norm(delta)
-            if not cursorLocked and l<.2:
+            if not cursorLocked and l<.5:
                 cursorLocked=True
 
-            isNoGo = above(C, cursor, nogo)<0
+            # isNoGo = above(C, cursor, nogo)<0
+            isNoGo = False
 
             if cursorLocked and not isNoGo:
-                cap = .5
+                cap = 1.
                 if l>cap:
                     delta *= cap/l
                 q += delta
-                bot.move(q.reshape((1,-1)), [.1], True, ctrlTime)
+                bot.move(q.reshape((1,-1)), [.2], True, ctrlTime)
 
         events = C.get_viewer().getEvents()
 
@@ -76,7 +78,7 @@ def test():
                 grasped.setColor([1.,.5,0])
 
             if e=="key up space" and grasped is not None:
-                bot.detach(grasped.name)
+                bot.detach('ego', grasped.name)
                 grasped.setColor([.9])
                 grasped=0
 
@@ -89,13 +91,13 @@ def test():
                 if d<.1:
                     if (nearest[0],nearest[1]) in glued:
                         print('un-gluing')
-                        bot.detach(nearest[1].name)
+                        bot.detach(nearest[0].name, nearest[1].name)
                         nearest[0].setColor([.9])
                         nearest[1].setColor([.9])
                         glued.remove((nearest[0],nearest[1]))
                     elif (nearest[1],nearest[0]) in glued:
                         print('un-gluing')
-                        bot.detach(nearest[0].name)
+                        bot.detach(nearest[1].name, nearest[0].name)
                         nearest[0].setColor([.9])
                         nearest[1].setColor([.9])
                         glued.remove((nearest[1],nearest[0]))

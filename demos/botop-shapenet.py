@@ -4,6 +4,7 @@
 import robotic as ry
 import numpy as np
 import time
+import random
 import h5py
 
 def plan(C: ry.Config, usePredefinedGraspFrame=None):
@@ -15,7 +16,8 @@ def plan(C: ry.Config, usePredefinedGraspFrame=None):
         ways.grasp_box(1., 'l_gripper', 'obj', 'l_palm', 'x', .02) # otherwise impose more general box grasp constraints
     ways.no_collisions([], ['table', 'l_palm', 'table', 'l_panda_coll7', 'table', 'l_panda_coll6', 'table', 'l_panda_coll5'])
     # ways.komo.addObjective([2.], ry.FS.position, ['l_gripper'], ry.OT.eq, scale=[0,0,1e0], target=[0,0,1.1]) # impose 'some' constaint also on the 2nd frame, here just lift, later, place with other orientation
-    ways.komo.addObjective([2.], ry.FS.position, ['l_gripper'], ry.OT.eq, [], target=[0,.4,1.]) # impose 'some' constaint also on the 2nd frame, here just lift, later, place with other orientation
+    ways.komo.addObjective([2.], ry.FS.position, ['l_gripper'], ry.OT.eq, [], target=[0,.4,1.2]) # impose 'some' constaint also on the 2nd frame, here just lift, later, place with other orientation
+    ways.komo.addObjective([2.], ry.FS.angularVel, ['l_gripper'], ry.OT.eq, [], [], 1)
     ret = ways.solve(1)
     print('grasp costs/feasibilities:', ret) # this provides a metric for how good/feasible the grasp is kinematically; can be use to reject the grasp
     # ways.komo.view(True)
@@ -60,8 +62,9 @@ def execute(C, bot: ry.BotOp, path1, path2):
     bot.gripperMove(ry.ArgWord._left, +1., .5) #normal opening
     bot.wait(C, forKeyPressed=False, forTimeToEnd=False, forGripper=True)
 
-    for t in range(10):
-        bot.sync(C, .1)
+    bot.home(C)
+    # for t in range(10):
+        # bot.sync(C, .1)
 
 
 def main():
@@ -69,10 +72,10 @@ def main():
     ry.params_add({
         'physx/angularDamping': 0.1,
         'physx/defaultFriction': 3.,  #reduce -> slip
-        'physx/defaultRestitution': .7, #quit bouncy
-        'physx/motorKp': 1000.,
-        'physx/motorKd': 100.,
-        'botsim/hyperSpeed': 1.,
+        'physx/defaultRestitution': .5, #bounciness
+        # 'physx/motorKp': 1000.,
+        # 'physx/motorKd': 100.,
+        # 'botsim/hyperSpeed': 1.,
         'botsim/verbose': 0}) #1 to see simulation display (not just sync'ed config); 4 to see physx internal model
 
     # setup a scene with robot
@@ -82,12 +85,13 @@ def main():
     C.addFrame('wall2', 'table') .setShape(ry.ST.ssBox, [1.,.1,.1,.01]) .setRelativePosition([0.,.7,.1])
     # C.getFrame('l_panda_finger_joint1').setAttribute('motorKp', 100)
     # C.getFrame('l_panda_finger_joint1').setAttribute('motorKd', 10)
-
+    C.getFrame('l_panda_coll2').setContact(0) #often contact with the falling object
+               
     # add the shapenet obj
     id = '1061c1b4af7fd99777f4e9e0a7e4c2'
     obj = C.addH5Object('shapenet', f'shapenet/models/{id}.shape.h5', 1)
     obj.setPosition([.2, .3, 1.])
-    obj.setQuaternion([1,0,1,0])
+    obj.setQuaternion([1,0,1,1])
     obj.setMass(1.) #rescales also inertia matrix
 
     # add a grasp reference relative to object
@@ -97,7 +101,7 @@ def main():
     with h5py.File(f'shapenet/grasps/{id}.grasps.h5', 'r') as fil:
         grasps = fil['grasps/success'][()]
     print('loaded grasps:', grasps.shape)
-    C.view(True)
+    C.view()
 
     # setup a copy of that scene just for grasp sampling
     CgraspSample = ry.Config()
@@ -111,11 +115,17 @@ def main():
     for t in range(20):
         bot.sync(C, .1)
 
-    for i in range(grasps.shape[0]):
+    for i in range(100):
+
+        # check clean start scene
+        if C.coll_totalViolation()>1e-2:
+            print('start scene is in collision!', C.getCollisions(), sep='\n')
+            return
+        
         # set grasp reference to grasp
-        relpose = grasps[i, :]
+        relpose = grasps[random.randint(0,grasps.shape[0]-1), :]
         C.getFrame('grasp').setRelativePose(relpose)
-        C.view(False)
+        # C.view(True)
 
         # plan motion
         path1, path2 = plan(C, usePredefinedGraspFrame='grasp')
