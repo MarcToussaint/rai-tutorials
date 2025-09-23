@@ -1,9 +1,9 @@
-import robotic as ry
+from robotic import BSpline
 import numpy as np
 import matplotlib.pyplot as plt
 
 ## B splines themselves, based on uniform knots
-S = ry.BSpline()
+S = BSpline()
 S.setKnots(2, np.linspace(0.,1.,10))
 B = S.getBmatrix(np.linspace(0.,1.,100), False, False)
 
