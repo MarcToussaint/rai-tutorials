@@ -70,7 +70,7 @@ def main():
 
     # setup a configuration:
     C = ry.Config()
-    C.addFile(ry.raiPath('../rai-robotModels/scenarios/pandaSingle.g'))
+    C.addFile('$RAI_PATH/scenarios/pandaSingle.g')
     # C.getFrame('l_panda_finger_joint1').setAttribute('motorKp', 100)
     # C.getFrame('l_panda_finger_joint1').setAttribute('motorKd', 10)
     obj = C.addFrame('obj')

@@ -2,7 +2,7 @@ import robotic as ry
 import random
 
 C = ry.Config()
-C.addFile(ry.raiPath('../rai-robotModels/scenarios/pandaSingle.g'))
+C.addFile(('$RAI_PATH/scenarios/pandaSingle.g'))
 
 C.addFrame('box', 'table') \
     .setJoint(ry.JT.rigid) \
@@ -24,7 +24,7 @@ boxSize = C.getFrame(box).getSize()
 C.view(True)
 C.get_viewer().visualsOnly()
 
-for l in range(20):
+for l in range(10):
     qStart = C.getJointState()
 
     graspDirection = random.choice(['y', 'z']) #'x' not possible: box too large

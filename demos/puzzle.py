@@ -14,7 +14,7 @@ ry.params_add({'botsim/verbose': 0})
 
 def test():
     C = ry.Config()
-    C.addFile('puzzle.g')
+    C.addFile('demos/puzzle.g')
     C.view(False)
     C.viewer().setWindow('PUZZLE', 1000, 1000)
     C.viewer().setupEventHandler(True)

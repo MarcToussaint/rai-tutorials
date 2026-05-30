@@ -34,7 +34,7 @@ def mini_JacIK(C: ry.Config, pos, qHome):
 # %%
 C = ry.Config()
 
-C.addFile(ry.raiPath("../rai-robotModels/scenarios/pandaSingle.g"))
+C.addFile(("$RAI_PATH/scenarios/pandaSingle.g"))
 qHome = C.getJointState()
 
 target = C.addFrame('target', 'table')

@@ -11,7 +11,7 @@ import time
 import robotic as ry
 
 C = ry.Config()
-# C.addFile(ry.raiPath('../rai-robotModels/panda/panda.g'))
+# C.addFile(('$RAI_PATH/panda/panda.g'))
 C.addFile("/home/mtoussai/git/playground/22-random/twoFingers.yml")
 # dict = C.asDict(False)
 # pprint.pp(dict)

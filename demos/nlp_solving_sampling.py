@@ -6,7 +6,7 @@ from matplotlib import cm
 
 def eval_fs(nlp, x):
     phi, _ = nlp.evaluate(x)
-    t = np.array(nlp.getFeatureTypes())
+    t = np.array(nlp.getTypes())
     f = phi[t==ry.OT.f]
     r = phi[t==ry.OT.sos]
     g = phi[t==ry.OT.ineq]
@@ -62,6 +62,7 @@ print(nlp.report(10))
 sol = ry.NLP_Solver()
 sol.setProblem(nlp)
 sol.setSolver(ry.OptMethod.LBFGS)
+sol.setTracing(trace_x=True)
 sol.solve()
 trace_x = sol.getTrace_x()
 print(trace_x)

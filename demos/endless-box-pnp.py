@@ -2,7 +2,7 @@ import robotic as ry
 import numpy as np
 
 C = ry.Config()
-C.addFile(ry.raiPath('../rai-robotModels/scenarios/pandaSingle.g'))
+C.addFile(('$RAI_PATH/scenarios/pandaSingle.g'))
 
 C.addFrame('box', 'table') \
     .setJoint(ry.JT.rigid) \
@@ -30,7 +30,7 @@ obj = box
 C.getFrame(obj).setRelativePosition([-.0,.3-.055,.095])
 C.getFrame(obj).setRelativeQuaternion([1.,0,0,0])
 
-for i in range(20):
+for i in range(10):
     qStart = C.getJointState()
 
     info = f'push {i}'

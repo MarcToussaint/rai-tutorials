@@ -80,7 +80,7 @@ def main():
 
     # setup a scene with robot
     C = ry.Config()
-    C.addFile(ry.raiPath('../rai-robotModels/scenarios/pandaSingle.g'))
+    C.addFile(('$RAI_PATH/scenarios/pandaSingle.g'))
     C.addFrame('wall1', 'table') .setShape(ry.ST.ssBox, [1.,.1,.1,.01]) .setRelativePosition([0.,.0,.1])
     C.addFrame('wall2', 'table') .setShape(ry.ST.ssBox, [1.,.1,.1,.01]) .setRelativePosition([0.,.7,.1])
     # C.getFrame('l_panda_finger_joint1').setAttribute('motorKp', 100)
@@ -106,7 +106,7 @@ def main():
     # setup a copy of that scene just for grasp sampling
     CgraspSample = ry.Config()
     CgraspSample.addConfigurationCopy(C)
-    CgraspSample.addFile(ry.raiPath("../rai-robotModels/scenarios/pandaFloatingGripper.g"))
+    CgraspSample.addFile(("$RAI_PATH/scenarios/pandaFloatingGripper.g"))
     CgraspSample.addFrame('grasp_ref', 'shapenet_pts') .setShape(ry.ST.marker, [.3])
     CgraspSample.selectJointsBySubtree(CgraspSample.getFrame('base'))
 
