@@ -1,7 +1,7 @@
 import robotic as ry
-import robotic.src.mujoco_io as mj
+import robotic.tools.mujoco_io as mj
 import sysconfig
-from robotic.src.yaml_helper import *
+from robotic.tools.yaml_helper import *
 
 pysite = sysconfig.get_paths()["purelib"]
 # file = pysite+"/gymnasium_robotics/envs/assets/kitchen_franka/kitchen_assets/kitchen_env_model.xml"
